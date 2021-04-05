@@ -1,3 +1,13 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Elastic Agent Setup
+agent_url         = 'https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.12.0-linux-x86_64.tar.gz'
+
+# YOU MUST REPLACE THESE VALUES WITH YOUR OWN. THESE AREN'T EVEN REAL
+kibana_url        = 'https://abcdef1234567890abcdef0123456789.us-central1.gcp.cloud.es.io:443'  # Replace this sample with your Kibana server
+enrollment_token  = 'XUyAzGtlSymvOEEQCqGv2cYoztLMeoiGYFzlrp5E5JPOEydHR+ERycb44A==' # Replace this random token with the one given by Kibana Fleet
+
 require 'ipaddr'
 
 # to make sure the nodes are created in order, we
@@ -11,7 +21,7 @@ ubuntu_first_node_vpn_ip    = '10.2.0.101'
 ubuntu_node_vpn_ip_address  = IPAddr.new ubuntu_first_node_vpn_ip
 
 Vagrant.configure(2) do |config|
-  config.vm.box = 'ubuntu-20.04-amd64'
+  config.vm.box = "generic/ubuntu2004"
 
   config.vm.provider 'libvirt' do |lv, config|
     lv.cpus = 2
@@ -24,6 +34,7 @@ Vagrant.configure(2) do |config|
   config.vm.provider 'virtualbox' do |vb|
     vb.linked_clone = true
     vb.cpus = 2
+    config.vm.synced_folder ".", "/vagrant", disabled: false
   end
 
   (1..ubuntu_number_of_nodes).each do |n|
@@ -41,7 +52,14 @@ Vagrant.configure(2) do |config|
       end
       config.vm.hostname = fqdn
       config.vm.network :private_network, ip: ip_address, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
-      config.vm.provision 'shell', path: 'provision-base.sh'
+      config.vm.provision 'shell',
+        path: 'provision-base.sh',
+        env: {
+          'AGENT_URL' => agent_url,
+          'KIBANA_URL' => kibana_url,
+          'ENROLLMENT_TOKEN' => enrollment_token
+        }
+
       config.vm.provision 'shell', path: 'provision-wireguard.sh', args: [ip_address, vpn_ip_address]
       config.trigger.before :destroy do |trigger|
         trigger.ruby do |env, machine|
@@ -70,3 +88,4 @@ Vagrant.configure(2) do |config|
     end
   end
 end
+

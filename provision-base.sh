@@ -56,3 +56,11 @@ set completion-ignore-case on
 "\eOD": backward-word
 "\eOC": forward-word
 EOF
+
+# Install Elastic Agent + Endpoint
+
+curl -s -L -O "${AGENT_URL}"
+tar xzf $(basename "${AGENT_URL}")
+cd $(basename $(basename "${AGENT_URL}") .tar.gz)
+
+sudo ./elastic-agent install -f --kibana-url="${KIBANA_URL}" --enrollment-token="${ENROLLMENT_TOKEN}"
